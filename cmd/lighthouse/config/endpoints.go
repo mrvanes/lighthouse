@@ -15,13 +15,17 @@ import (
 
 // Endpoints holds configuration for the different possible endpoints
 type Endpoints struct {
-	FetchEndpoint                      fetchEndpointConf       `yaml:"fetch"`
-	ListEndpoint                       lighthouse.EndpointConf `yaml:"list"`
-	ResolveEndpoint                    resolveEndpointConf     `yaml:"resolve"`
-	TrustMarkStatusEndpoint            lighthouse.EndpointConf `yaml:"trust_mark_status"`
-	TrustMarkedEntitiesListingEndpoint lighthouse.EndpointConf `yaml:"trust_mark_list"`
-	TrustMarkEndpoint                  trustMarkEndpointConf   `yaml:"trust_mark"`
-	HistoricalKeysEndpoint             lighthouse.EndpointConf `yaml:"historical_keys"`
+	NonceEndpoint                      nonceEndpointConf          `yaml:"nonce"`
+	InitializationEndpoint             initializationEndpointConf `yaml:"initialization"`
+	AttestationEndpoint                attestationEndpointConf    `yaml:"attestation"`
+	JWTEndpoint                        jwtEndpointConf            `yaml:"jwt"`
+	FetchEndpoint                      fetchEndpointConf          `yaml:"fetch"`
+	ListEndpoint                       lighthouse.EndpointConf    `yaml:"list"`
+	ResolveEndpoint                    resolveEndpointConf        `yaml:"resolve"`
+	TrustMarkStatusEndpoint            lighthouse.EndpointConf    `yaml:"trust_mark_status"`
+	TrustMarkedEntitiesListingEndpoint lighthouse.EndpointConf    `yaml:"trust_mark_list"`
+	TrustMarkEndpoint                  trustMarkEndpointConf      `yaml:"trust_mark"`
+	HistoricalKeysEndpoint             lighthouse.EndpointConf    `yaml:"historical_keys"`
 
 	EnrollmentEndpoint        checkedEndpointConf     `yaml:"enroll"`
 	EnrollmentRequestEndpoint lighthouse.EndpointConf `yaml:"enroll_request"`
@@ -32,6 +36,26 @@ type Endpoints struct {
 type checkedEndpointConf struct {
 	lighthouse.EndpointConf `yaml:",inline"`
 	CheckerConfig           lighthouse.EntityCheckerConfig `yaml:"checker"`
+}
+
+// Added by MvE
+type nonceEndpointConf struct {
+	lighthouse.EndpointConf `yaml:",inline"`
+}
+
+// Added by MvE
+type initializationEndpointConf struct {
+	lighthouse.EndpointConf `yaml:",inline"`
+}
+
+// Added by MvE
+type attestationEndpointConf struct {
+	lighthouse.EndpointConf `yaml:",inline"`
+}
+
+// Added by MvE
+type jwtEndpointConf struct {
+	lighthouse.EndpointConf `yaml:",inline"`
 }
 
 type fetchEndpointConf struct {
