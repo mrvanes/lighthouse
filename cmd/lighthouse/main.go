@@ -101,6 +101,22 @@ func main() {
 	}
 	log.Println("Initialized Entity")
 
+	// Added by MvE
+	if endpoint := c.Endpoints.JWTEndpoint; endpoint.IsSet() {
+		lh.AddJWTEndpoint(endpoint.EndpointConf)
+	}
+	// Added by MvE
+	if endpoint := c.Endpoints.InitializationEndpoint; endpoint.IsSet() {
+		lh.AddInitializationEndpoint(endpoint.EndpointConf)
+	}
+	// Added by MvE
+	if endpoint := c.Endpoints.NonceEndpoint; endpoint.IsSet() {
+		lh.AddNonceEndpoint(endpoint.EndpointConf)
+	}
+	// Added by MvE
+	if endpoint := c.Endpoints.AttestationEndpoint; endpoint.IsSet() {
+		lh.AddAttestationEndpoint(endpoint.EndpointConf)
+	}
 	if endpoint := c.Endpoints.FetchEndpoint; endpoint.IsSet() {
 		lh.AddFetchEndpoint(endpoint.EndpointConf, subordinateStorage)
 	}
