@@ -27,9 +27,97 @@ func NewFileStorage(basepath string) *FileStorage {
 		files: map[string]*file{
 			"subordinates":          {path: path.Join(basepath, "subordinates.json")},
 			"trust_marked_entities": {path: path.Join(basepath, "trust_marked_entities.json")},
+			"walletinstances":       {path: path.Join(basepath, "walletinstances.json")},
 		},
 	}
 }
+
+
+
+
+
+// walletInstanceFileStorage is a file based WalletInstanceStorageBackend
+type walletInstanceFileStorage struct {
+	*file
+}
+
+func (s walletInstanceFileStorage) readUnlocked() (infos map[string]WalletInstanceInfo, err error) {
+	data, err := os.ReadFile(s.path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	err = json.Unmarshal(data, &infos)
+	return
+}
+func (s walletInstanceFileStorage) writeUnlocked(infos map[string]WalletInstanceInfo) (err error) {
+	data, err := json.Marshal(infos)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.path, data, 0600)
+}
+
+
+// Write implements the WalletInstanceStorageBackend
+func (s walletInstanceFileStorage) Write(hardwareKeyTag string, info WalletInstanceInfo) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	infos, err := s.readUnlocked()
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	if infos == nil {
+		infos = make(map[string]WalletInstanceInfo)
+	}
+	infos[hardwareKeyTag] = info
+	return s.writeUnlocked(infos)
+}
+
+// Delete implements the WalletInstanceStorageBackend
+func (s walletInstanceFileStorage) Delete(hardwareKeyTag string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	infos, err := s.readUnlocked()
+	if err != nil {
+		return err
+	}
+	delete(infos, hardwareKeyTag)
+	return s.writeUnlocked(infos)
+}
+
+// Load implements the WalletInstanceStorageBackend
+func (walletInstanceFileStorage) Load() error {
+	return nil
+}
+
+
+// WalletInstance implements the WalletInstanceStorageBackend interface
+func (s walletInstanceFileStorage) WalletInstance(hardwareKeyTag string) (*WalletInstanceInfo, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	infosMap, err := s.readUnlocked()
+	if err != nil {
+		return nil, err
+	}
+	info, ok := infosMap[hardwareKeyTag]
+	if !ok {
+		return nil, nil
+	}
+	return &info, nil
+}
+
+// WalletInstanceStorage returns a file-based WalletInstanceStorageBackend
+func (store *FileStorage) WalletInstanceStorage() WalletInstanceStorageBackend {
+	return walletInstanceFileStorage{store.files["walletinstances"]}
+}
+
+
+
 
 // subordinateFileStorage is a file based SubordinateStorageBackend
 type subordinateFileStorage struct {

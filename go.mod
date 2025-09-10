@@ -68,3 +68,5 @@ require (
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
+
+replace github.com/go-oidfed/lib => ./go-oidfed/lib

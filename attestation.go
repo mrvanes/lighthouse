@@ -1,7 +1,8 @@
 package lighthouse
 
 import (
-	// "time"
+	"fmt"
+	"time"
 	// "encoding/json"
 
 	// "github.com/go-oidfed/lib/oidfedconst"
@@ -11,11 +12,21 @@ import (
 	// "github.com/go-oidfed/lib/apimodel"
 	// "github.com/go-oidfed/lib/unixtime"
 	// "github.com/go-oidfed/lib/jwx"
-
+	"github.com/go-oidfed/lighthouse/storage"
 )
 
-type Attestation struct {
-	Message string `json:"msg"`
+// type Attestation struct {
+// 	KeyAttestation storage.KeyAttestation
+// }
+
+type WalletAttestation struct {
+	Format  string `json:"format"`
+	// Attestation Attestation `json:"attestation"`
+	Attestation storage.KeyAttestation `json:"attestation"`
+}
+
+type Attestations struct {
+	WalletAttestations[] WalletAttestation `json:"wallet_attestations"`
 }
 
 // AttestationRequest is a request to the attestation endpoint
@@ -28,7 +39,10 @@ type AttestationRequest struct {
 }
 
 // AddAttestationEndpoint adds an attestation endpoint
-func (fed *LightHouse) AddAttestationEndpoint(endpoint EndpointConf) {
+func (fed *LightHouse) AddAttestationEndpoint(
+	endpoint EndpointConf,
+	store storage.WalletInstanceStorageBackend,
+) {
 	fed.server.Post(
 		endpoint.Path, func(ctx *fiber.Ctx) error {
 			var req AttestationRequest
@@ -61,13 +75,42 @@ func (fed *LightHouse) AddAttestationEndpoint(endpoint EndpointConf) {
 				return ctx.JSON(oidfed.ErrorInvalidRequest("required parameter 'cnf' not given"))
 			}
 
-			message := &JWT{Message: "Hello " + req.Nonce + " " + req.Cnf}
+			var nonce = req.Nonce
+			var hardware_key_tag = req.HardwareKeyTag
+			var time time.Time
 
-			jwt, err := fed.GeneralJWTSigner.JWT(message, "oauth-client-attestation+jwt")
-			if err != nil {
-				return nil
+			time, ok := Nonces[nonce]
+			fmt.Println(time)
+
+			if ok {
+				Nonces.deleteNonce(nonce)
+			} else {
+				ctx.Status(403)
+				return ctx.JSON(oidfed.ErrorInvalidRequest("invalid nonce"))
 			}
-			return ctx.Send(jwt)
+
+			info, err := store.WalletInstance(hardware_key_tag)
+			if err != nil {
+				return ctx.JSON(oidfed.ErrorInvalidRequest("hardware key tag not found"))
+			}
+
+			var key_attestion = info.KeyAttestation
+
+			// Build the Wallet Attestation, containing multiple Wallet Attestations that have an Attestation
+			// attestation := &Attestation{KeyAttestation: key_attestion}
+			// wallet_attestation := &WalletAttestation{Format: "json", Attestation: *attestation}
+			wallet_attestation := &WalletAttestation{Format: "json", Attestation: key_attestion}
+
+			attestations := &Attestations{WalletAttestations: []WalletAttestation{*wallet_attestation}}
+
+			// message := &JWT{Message: "Hello " + nonce + " " + req.Cnf}
+			// jwt, err := fed.GeneralJWTSigner.JWT(message, "oauth-client-attestation+jwt")
+			// if err != nil {
+			// 	return nil
+			// }
+			// return ctx.Send(jwt)
+
+			return ctx.JSON(attestations)
 		},
 	)
 }

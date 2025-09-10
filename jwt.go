@@ -28,6 +28,22 @@ type JWTRequest struct {
 
 // AddAttestationEndpoint adds an attestation endpoint
 func (fed *LightHouse) AddJWTEndpoint(endpoint EndpointConf) {
+	// Get endpoint
+	fed.server.Get(
+		endpoint.Path, func(ctx *fiber.Ctx) error {
+			return ctx.Send([]byte("Get"))
+		},
+	)
+
+	// Get endpoint
+	fed.server.Get(
+		endpoint.Path + "/:key", func(ctx *fiber.Ctx) error {
+			message := []byte(ctx.Params("key"))
+			return ctx.Send(message)
+		},
+	)
+
+	// Post endpoint
 	fed.server.Post(
 		endpoint.Path, func(ctx *fiber.Ctx) error {
 			var req JWTRequest
@@ -52,15 +68,17 @@ func (fed *LightHouse) AddJWTEndpoint(endpoint EndpointConf) {
 				return ctx.JSON(oidfed.ErrorInvalidRequest("required parameter body not given"))
 			}
 
+
 			var nonce = req.Nonce
 			var time time.Time
 
-			time, ok := Nonces[req.Nonce]
+			time, ok := Nonces[nonce]
 			fmt.Println(time)
 			if ok {
 				Nonces.deleteNonce(nonce)
 			} else {
-				return ctx.JSON(oidfed.ErrorInvalidRequest("incorrect nonce"))
+				ctx.Status(403)
+				return ctx.JSON(oidfed.ErrorInvalidRequest("invalid nonce"))
 			}
 
 			message := &JWT{Message: "Hello " + req.Subject + " " + nonce}

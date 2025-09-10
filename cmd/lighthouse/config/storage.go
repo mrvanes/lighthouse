@@ -48,22 +48,25 @@ func (bt backendType) String() string {
 // LoadStorageBackends loads and returns the storage backends for the passed Config
 func LoadStorageBackends(c storageConf) (
 	subordinateStorage storage.SubordinateStorageBackend,
-	trustMarkedEntitiesStorage storage.TrustMarkedEntitiesStorageBackend, err error,
+	trustMarkedEntitiesStorage storage.TrustMarkedEntitiesStorageBackend,
+	walletInstanceStorage storage.WalletInstanceStorageBackend, err error,
 ) {
 	switch c.BackendType {
 	case BackendTypeJSON:
 		warehouse := storage.NewFileStorage(c.DataDir)
 		subordinateStorage = warehouse.SubordinateStorage()
 		trustMarkedEntitiesStorage = warehouse.TrustMarkedEntitiesStorage()
+		walletInstanceStorage = warehouse.WalletInstanceStorage()
 	case BackendTypeBadger:
 		warehouse, err := storage.NewBadgerStorage(c.DataDir)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		subordinateStorage = warehouse.SubordinateStorage()
 		trustMarkedEntitiesStorage = warehouse.TrustMarkedEntitiesStorage()
+		walletInstanceStorage = nil
 	default:
-		return nil, nil, errors.Errorf("unknown storage backend type: %s", c.BackendType)
+		return nil, nil, nil, errors.Errorf("unknown storage backend type: %s", c.BackendType)
 	}
 	log.Info("Loaded storage backend")
 	return

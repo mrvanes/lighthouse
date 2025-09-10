@@ -1,7 +1,7 @@
 package lighthouse
 
 import (
-	"fmt"
+	// "fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -170,8 +170,8 @@ func (fed LightHouse) Listen(addr string) error {
 func (fed LightHouse) Start() {
 	conf := fed.serverConf
 	if !conf.TLS.Enabled {
-		log.WithField("port", conf.Port).Info("TLS is disabled starting http server")
-		log.WithError(fed.server.Listen(fmt.Sprintf(":%d", conf.Port))).Fatal()
+		log.WithField("address", conf.Address).Info("TLS is disabled starting http server")
+		log.WithError(fed.server.Listen(conf.Address)).Fatal()
 	}
 	// TLS enabled
 	if conf.TLS.RedirectHTTP {

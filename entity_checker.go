@@ -318,7 +318,8 @@ func (c EntityIDEntityChecker) Check(
 	_ []string,
 ) (bool, int, *oidfed.Error) {
 	if !slices.Contains(c.AllowedIDs, entityConfiguration.Subject) {
-		return false, fiber.StatusBadRequest, oidfed.ErrorInvalidRequest("this entity is not allowed")
+		err := oidfed.ErrorInvalidRequest("this entity is not allowed")
+		return false, fiber.StatusBadRequest, &err
 	}
 	return true, 0, nil
 }
@@ -347,9 +348,10 @@ func (c AuthorityHintEntityChecker) Check(
 	_ []string,
 ) (bool, int, *oidfed.Error) {
 	if !slices.Contains(entityConfiguration.AuthorityHints, c.EntityID) {
-		return false, fiber.StatusBadRequest, oidfed.ErrorInvalidRequest(
+		err := oidfed.ErrorInvalidRequest(
 			fmt.Sprintf("must include '%s' in authority_hints", c.EntityID),
 		)
+		return false, fiber.StatusBadRequest, &err
 	}
 	return true, 0, nil
 }

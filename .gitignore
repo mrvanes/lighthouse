@@ -3,3 +3,11 @@
 /lhcli
 /lighthouse
 /.cache/
+cert
+data
+go/pkg/mod
+go-oidfed/lib
+policy
+build
+tidy
+config.yaml

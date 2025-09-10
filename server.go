@@ -1,7 +1,7 @@
 package lighthouse
 
 type ServerConf struct {
-	Port              int      `yaml:"port"`
+	Address           string   `yaml:"address"`
 	TLS               tlsConf  `yaml:"tls"`
 	TrustedProxies    []string `yaml:"trusted_proxies"`
 	ForwardedIPHeader string   `yaml:"forwarded_ip_header"`

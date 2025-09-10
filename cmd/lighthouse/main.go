@@ -35,7 +35,7 @@ func main() {
 		}
 	}
 
-	subordinateStorage, trustMarkedEntitiesStorage, err := config.LoadStorageBackends(c.Storage)
+	subordinateStorage, trustMarkedEntitiesStorage, walletInstanceStorage, err := config.LoadStorageBackends(c.Storage)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func main() {
 	}
 	// Added by MvE
 	if endpoint := c.Endpoints.InitializationEndpoint; endpoint.IsSet() {
-		lh.AddInitializationEndpoint(endpoint.EndpointConf)
+		lh.AddInitializationEndpoint(endpoint.EndpointConf, walletInstanceStorage)
 	}
 	// Added by MvE
 	if endpoint := c.Endpoints.NonceEndpoint; endpoint.IsSet() {
@@ -115,7 +115,7 @@ func main() {
 	}
 	// Added by MvE
 	if endpoint := c.Endpoints.AttestationEndpoint; endpoint.IsSet() {
-		lh.AddAttestationEndpoint(endpoint.EndpointConf)
+		lh.AddAttestationEndpoint(endpoint.EndpointConf, walletInstanceStorage)
 	}
 	if endpoint := c.Endpoints.FetchEndpoint; endpoint.IsSet() {
 		lh.AddFetchEndpoint(endpoint.EndpointConf, subordinateStorage)
