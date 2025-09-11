@@ -15,14 +15,16 @@ import (
 	"github.com/go-oidfed/lighthouse/storage"
 )
 
-// type Attestation struct {
-// 	KeyAttestation storage.KeyAttestation
-// }
+type Attestation struct {
+	Provider string `json:"provider"`
+	TrustChain oidfed.JWSMessages `json:"trust_chain"`
+	KeyAttestation storage.KeyAttestation
+}
 
 type WalletAttestation struct {
 	Format  string `json:"format"`
-	// Attestation Attestation `json:"attestation"`
-	Attestation storage.KeyAttestation `json:"attestation"`
+	Attestation Attestation `json:"attestation"`
+	// Attestation storage.KeyAttestation `json:"attestation"`
 }
 
 type Attestations struct {
@@ -94,12 +96,44 @@ func (fed *LightHouse) AddAttestationEndpoint(
 				return ctx.JSON(oidfed.ErrorInvalidRequest("hardware key tag not found"))
 			}
 
-			var key_attestion = info.KeyAttestation
+			// This is the original posted attestation from wallet initialisation
+			key_attestion := info.KeyAttestation
+
+			// This is the entityID of the Lighthouse server/provider
+			entity_id := fed.FederationEntity.EntityID
+
+			resolver := oidfed.TrustResolver{
+				// These are the self AuthorityHints
+				TrustAnchors:   oidfed.NewTrustAnchorsFromEntityIDs(fed.FederationEntity.AuthorityHints...),
+				// This is self
+				StartingEntity: entity_id,
+				Types:          nil,
+			}
+
+			// The chain should now resolve self to self AuthorityHints
+			chains := resolver.ResolveToValidChainsWithoutVerifyingMetadata()
+			if len(chains) == 0 {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.JSON(oidfed.ErrorInvalidTrustChain("no valid trust path between sub and anchor found"))
+			}
+			chains = chains.Filter(oidfed.TrustChainsFilterValidMetadata)
+			if len(chains) == 0 {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.JSON(
+					oidfed.ErrorInvalidMetadata(
+						"no trust path with valid metadata found between sub and anchor",
+					),
+				)
+			}
+			selectedChain := chains.Filter(oidfed.TrustChainsFilterMinPathLength)[0]
+
+			// trust_chain := "trust_chain"
+			trust_chain := selectedChain.Messages()
 
 			// Build the Wallet Attestation, containing multiple Wallet Attestations that have an Attestation
-			// attestation := &Attestation{KeyAttestation: key_attestion}
-			// wallet_attestation := &WalletAttestation{Format: "json", Attestation: *attestation}
-			wallet_attestation := &WalletAttestation{Format: "json", Attestation: key_attestion}
+			attestation := &Attestation{Provider: entity_id, TrustChain: trust_chain, KeyAttestation: key_attestion}
+			wallet_attestation := &WalletAttestation{Format: "json", Attestation: *attestation}
+			// wallet_attestation := &WalletAttestation{Format: "json", Attestation: key_attestion}
 
 			attestations := &Attestations{WalletAttestations: []WalletAttestation{*wallet_attestation}}
 
